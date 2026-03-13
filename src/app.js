@@ -34,6 +34,20 @@ app.use(express.static("public"));
 
 
 // routes
+app.get("/", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    message: "Unified backend is running"
+  });
+});
+
+app.get("/api/v1/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    message: "API is healthy"
+  });
+});
+
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/events", eventRoutes);
