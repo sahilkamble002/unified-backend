@@ -1,21 +1,23 @@
 import jwt from "jsonwebtoken";
+import {
+  accessTokenExpiry,
+  accessTokenSecret,
+  refreshTokenExpiry,
+  refreshTokenSecret
+} from "../config/auth.js";
 
 export const generateAccessToken = (userId) => {
-
-    
   return jwt.sign(
     { userId },
-    process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
+    accessTokenSecret,
+    { expiresIn: accessTokenExpiry }
   );
-
-  
 };
 
 export const generateRefreshToken = (userId) => {
   return jwt.sign(
     { userId },
-    process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY }
+    refreshTokenSecret,
+    { expiresIn: refreshTokenExpiry }
   );
 };

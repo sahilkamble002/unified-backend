@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import prisma from "../config/prisma.js";
+import { accessTokenSecret } from "../config/auth.js";
 import { apiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
@@ -16,7 +17,7 @@ const verifyJWT = asyncHandler(async (req, res, next) => {
   let decoded;
 
   try {
-    decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    decoded = jwt.verify(token, accessTokenSecret);
   } catch {
     throw new apiError(401, "Invalid or expired access token");
   }

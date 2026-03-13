@@ -1,6 +1,7 @@
 import prisma from "../../config/prisma.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { refreshTokenSecret } from "../../config/auth.js";
 import { apiError } from "../../utils/apiError.js";
 import { apiResponse } from "../../utils/apiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
@@ -62,7 +63,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   // verify refresh token
   let decoded;
   try {
-    decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    decoded = jwt.verify(refreshToken, refreshTokenSecret);
   } catch {
     throw new apiError(401, "Invalid refresh token");
   }
