@@ -48,6 +48,20 @@ const getEventTasks = asyncHandler(async (req, res) => {
                     }
                 })
         },
+        include: {
+            assignments: {
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            username: true,
+                            email: true
+                        }
+                    }
+                }
+            }
+        },
         orderBy: {
             createdAt: "desc"
         }
@@ -184,25 +198,48 @@ const updateTaskStatus = asyncHandler(async (req, res) => {
         throw new apiError(400, "Status is required")
     }
 
-    const assignment = await prisma.taskAssignment.findUnique({
+    const task = await prisma.task.findUnique({
+        where: { id: taskId },
+        select: {
+            id: true,
+            eventId: true
+        }
+    })
+
+    if (!task) {
+        throw new apiError(404, "Task not found")
+    }
+
+    const membership = await prisma.eventMember.findUnique({
         where: {
-            taskId_userId: {
-                taskId,
+            eventId_userId: {
+                eventId: task.eventId,
                 userId
             }
         }
     })
 
-    if (!assignment) {
-        throw new apiError(403, "You are not assigned to this task")
+    if (!membership) {
+        throw new apiError(403, "You are not part of this event")
     }
 
-    const task = await prisma.task.findUnique({
-        where: { id: taskId }
-    })
+    const canManageTaskStatus = ["SUPER_ADMIN", "ADMIN", "MANAGER"].includes(
+        membership.role
+    )
 
-    if (!task) {
-        throw new apiError(404, "Task not found")
+    if (!canManageTaskStatus) {
+        const assignment = await prisma.taskAssignment.findUnique({
+            where: {
+                taskId_userId: {
+                    taskId,
+                    userId
+                }
+            }
+        })
+
+        if (!assignment) {
+            throw new apiError(403, "You are not assigned to this task")
+        }
     }
 
     const updatedTask = await prisma.task.update({
@@ -228,6 +265,7 @@ const getTaskDetails = asyncHandler(async (req, res) => {
                         select: {
                             id: true,
                             name: true,
+                            username: true,
                             email: true
                         }
                     }

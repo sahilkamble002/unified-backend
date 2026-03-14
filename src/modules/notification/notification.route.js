@@ -14,7 +14,7 @@ router.patch("/:notificationId/read", verifyJWT, markNotificationRead)
 router.post(
   "/event/:eventId",
   verifyJWT,
-  requireEventRole("SUPER_ADMIN", "ADMIN", "MANAGER"),
+  requireEventRole("SUPER_ADMIN", "ADMIN", "FINANCE"),
   createEventNotification
 )
 
