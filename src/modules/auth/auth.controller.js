@@ -9,13 +9,14 @@ import { generateAccessToken, generateRefreshToken } from "../../utils/token.js"
 
 const loginUser = asyncHandler(async (req, res) => {
   const { username, password } = req.body;
+  const normalizedUsername = username?.trim().toLowerCase();
 
-  if (!username || !password) {
+  if (!normalizedUsername || !password) {
     throw new apiError(400, "Username and password are required");
   }
 
   const user = await prisma.user.findUnique({
-    where: { username }
+    where: { username: normalizedUsername }
   });
 
   if (!user) {
