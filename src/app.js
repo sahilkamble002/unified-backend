@@ -17,14 +17,51 @@ dotenv.config({
   path: "./.env"
 });
 
+const configuredOrigins = (process.env.CORS_ORIGIN || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedOrigins = new Set(
+  [
+    ...configuredOrigins,
+    "http://localhost:5173",
+    "http://localhost:19006",
+    "http://localhost:8081",
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
+  ].filter(Boolean)
+);
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) {
+    return true;
+  }
+
+  if (allowedOrigins.has(origin)) {
+    return true;
+  }
+
+  try {
+    const { hostname } = new URL(origin);
+    return hostname.endsWith(".vercel.app");
+  } catch {
+    return false;
+  }
+};
+
 const app = express();
 
 //middlerware
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN 
-      ? [process.env.CORS_ORIGIN, "http://localhost:5173", process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`].filter(Boolean)
-      : ["http://localhost:5173"],
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true
   })
 );

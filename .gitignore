@@ -7,3 +7,5 @@ build
 .next
 
 /src/generated/prisma
+
+.vercel
