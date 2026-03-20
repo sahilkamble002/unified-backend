@@ -141,8 +141,10 @@ const createExpense = asyncHandler(async (req, res) => {
   const { title, amount } = req.body
 
   const userId = req.user.id
+  const normalizedTitle = title?.trim()
+  const normalizedAmount = Number(amount)
 
-  if (!title || !amount) {
+  if (!normalizedTitle || !Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
     throw new apiError(400, "Title and amount are required")
   }
 
@@ -157,8 +159,8 @@ const createExpense = asyncHandler(async (req, res) => {
   const expense = await prisma.expense.create({
     data: {
       eventId,
-      title,
-      amount: Number(amount),
+      title: normalizedTitle,
+      amount: normalizedAmount,
       paidBy: userId
     }
   })
@@ -221,6 +223,43 @@ const getEventExpenses = asyncHandler(async (req, res) => {
 
 })
 
+const updateExpense = asyncHandler(async (req, res) => {
+
+  const { eventId, expenseId } = req.params
+  const { title, amount } = req.body
+
+  const normalizedTitle = title?.trim()
+  const normalizedAmount = Number(amount)
+
+  if (!normalizedTitle || !Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+    throw new apiError(400, "Title and amount are required")
+  }
+
+  const expense = await prisma.expense.findFirst({
+    where: {
+      id: expenseId,
+      eventId
+    }
+  })
+
+  if (!expense) {
+    throw new apiError(404, "Expense not found")
+  }
+
+  const updatedExpense = await prisma.expense.update({
+    where: { id: expenseId },
+    data: {
+      title: normalizedTitle,
+      amount: normalizedAmount
+    }
+  })
+
+  return res.status(200).json(
+    new apiResponse(200, "Expense updated successfully", updatedExpense)
+  )
+
+})
+
 const getEventDonationQR = asyncHandler(async (req, res) => {
 
   const { eventId } = req.params
@@ -261,6 +300,12 @@ const getEventDonationQR = asyncHandler(async (req, res) => {
 const verifyDonation = asyncHandler(async (req, res) => {
 
   const { donationId } = req.params
+  const requestedStatus = req.body?.status
+  const nextStatus = requestedStatus || "SUCCESS"
+
+  if (!["PENDING", "SUCCESS"].includes(nextStatus)) {
+    throw new apiError(400, "Invalid donation status")
+  }
 
   const donation = await prisma.donation.findUnique({
     where: { id: donationId }
@@ -273,12 +318,18 @@ const verifyDonation = asyncHandler(async (req, res) => {
   const updatedDonation = await prisma.donation.update({
     where: { id: donationId },
     data: {
-      status: "SUCCESS"
+      status: nextStatus
     }
   })
 
   return res.status(200).json(
-    new apiResponse(200, "Donation verified successfully", updatedDonation)
+    new apiResponse(
+      200,
+      nextStatus === "SUCCESS"
+        ? "Donation verified successfully"
+        : "Donation marked as not verified",
+      updatedDonation
+    )
   )
 
 })
@@ -323,6 +374,7 @@ export { createDonation,
         getEventDonations,
         getFinanceSummary, 
         createExpense, 
+        updateExpense,
         getEventExpenses, 
         getEventDonationQR, 
         verifyDonation, 

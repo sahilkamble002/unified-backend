@@ -7,6 +7,7 @@ import {
   getEventDonations,
   getFinanceSummary,
   createExpense,
+  updateExpense,
   getEventExpenses,
   getEventDonationQR,
   verifyDonation,
@@ -39,6 +40,13 @@ router.post(
   verifyJWT,
   requireEventRole("SUPER_ADMIN", "ADMIN", "FINANCE"),
   createExpense
+)
+
+router.patch(
+  "/:eventId/expense/:expenseId",
+  verifyJWT,
+  requireEventRole("SUPER_ADMIN", "ADMIN", "FINANCE"),
+  updateExpense
 )
 
 router.get(
