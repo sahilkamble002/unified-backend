@@ -303,7 +303,7 @@ const verifyDonation = asyncHandler(async (req, res) => {
   const requestedStatus = req.body?.status
   const nextStatus = requestedStatus || "SUCCESS"
 
-  if (!["PENDING", "SUCCESS"].includes(nextStatus)) {
+  if (!["FAILED", "SUCCESS"].includes(nextStatus)) {
     throw new apiError(400, "Invalid donation status")
   }
 

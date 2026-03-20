@@ -41,6 +41,12 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum PushPlatform {
+  WEB
+  ANDROID
+  IOS
+}
+
 enum ExpenseCategory {
   FOOD
   DECORATION
@@ -69,6 +75,7 @@ model User {
   
   expenses          Expense[]
   notifications Notification[]
+  pushTokens    PushToken[]
 }
 
 model Event {
@@ -192,4 +199,18 @@ model Notification {
   user  User  @relation(fields: [userId], references: [id])
   event Event? @relation(fields: [eventId], references: [id])
   @@index([userId, createdAt])
+}
+
+model PushToken {
+  id         String       @id @default(uuid())
+  userId     String
+  token      String       @unique
+  platform   PushPlatform
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  lastSeenAt DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
