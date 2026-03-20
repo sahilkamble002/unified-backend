@@ -1,18 +1,64 @@
 import admin from "firebase-admin"
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    }),
-  })
+let firebaseInitAttempted = false
+let firebaseReady = false
+
+const getFirebaseCredentialConfig = () => {
+  const projectId = process.env.FIREBASE_PROJECT_ID?.trim()
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim()
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY
+
+  if (!projectId || !clientEmail || !privateKey) {
+    return null
+  }
+
+  return {
+    projectId,
+    clientEmail,
+    privateKey: privateKey.replace(/\\n/g, "\n")
+  }
 }
 
-export const sendPushToTokens = async (tokens, payload) => {
+const ensureFirebaseInitialized = () => {
+  if (admin.apps.length) {
+    firebaseReady = true
+    return true
+  }
 
-  if (!tokens.length) {
+  if (firebaseInitAttempted) {
+    return firebaseReady
+  }
+
+  firebaseInitAttempted = true
+
+  const credentialConfig = getFirebaseCredentialConfig()
+
+  if (!credentialConfig) {
+    console.warn("FCM skipped: Firebase Admin credentials are missing")
+    firebaseReady = false
+    return false
+  }
+
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert(credentialConfig)
+    })
+    firebaseReady = true
+    return true
+  } catch (error) {
+    console.error("FCM initialization failed:", error)
+    firebaseReady = false
+    return false
+  }
+}
+
+const normalizeDataPayload = (payload = {}) =>
+  Object.fromEntries(
+    Object.entries(payload).map(([key, value]) => [key, String(value ?? "")])
+  )
+
+export const sendPushToTokens = async (tokens, payload = {}) => {
+  if (!Array.isArray(tokens) || !tokens.length) {
     return {
       attempted: 0,
       delivered: 0,
@@ -21,16 +67,27 @@ export const sendPushToTokens = async (tokens, payload) => {
     }
   }
 
+  if (!ensureFirebaseInitialized()) {
+    return {
+      attempted: tokens.length,
+      delivered: 0,
+      skipped: tokens.length,
+      invalidTokens: []
+    }
+  }
+
+  const notificationBody = payload.body || payload.message || ""
+
   const message = {
     tokens,
     notification: {
-      title: payload.title,
-      body: payload.body
+      title: payload.title || "",
+      body: notificationBody
     },
-    data: {
+    data: normalizeDataPayload({
       ...payload.data,
-      eventId: String(payload.data?.eventId || "")
-    }
+      eventId: payload.data?.eventId || ""
+    })
   }
 
   try {
@@ -57,7 +114,6 @@ export const sendPushToTokens = async (tokens, payload) => {
       skipped: tokens.length - response.successCount,
       invalidTokens
     }
-
   } catch (error) {
     console.error("FCM Error:", error)
 
