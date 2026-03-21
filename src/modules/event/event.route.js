@@ -47,7 +47,7 @@ router.delete(
 router.post(
   "/:eventId/members",
   verifyJWT,
-  requireEventRole("SUPER_ADMIN", "ADMIN"),
+  requireEventRole("SUPER_ADMIN"),
   addEventMember
 )
 
@@ -60,14 +60,14 @@ router.get(
 router.patch(
   "/:eventId/members/:username",
   verifyJWT,
-  requireEventRole("SUPER_ADMIN", "ADMIN"),
+  requireEventRole("SUPER_ADMIN"),
   updateMemberRole
 )
 
 router.delete(
   "/:eventId/members/:username",
   verifyJWT,
-  requireEventRole("SUPER_ADMIN", "ADMIN"),
+  requireEventRole("SUPER_ADMIN"),
   removeEventMember
 )
 
