@@ -19,7 +19,7 @@ const router = express.Router()
 router.post(
   "/:eventId/donate",
   verifyJWT,
-  requireEventRole("SUPER_ADMIN", "ADMIN", "FINANCE"),
+  requireEventRole("SUPER_ADMIN", "ADMIN", "FINANCE", "VOLUNTEER"),
   createDonation
 )
 
@@ -38,7 +38,7 @@ router.get(
 router.post(
   "/:eventId/expense",
   verifyJWT,
-  requireEventRole("SUPER_ADMIN", "ADMIN", "FINANCE"),
+  requireEventRole("SUPER_ADMIN", "ADMIN", "FINANCE", "MANAGER", "VOLUNTEER"),
   createExpense
 )
 
